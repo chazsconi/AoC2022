@@ -1,42 +1,85 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Item {
     Rock,
     Paper,
     Scissors,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Winner {
     P1,
     P2,
     Draw,
 }
 
-use {Item::Paper, Item::Rock, Item::Scissors, Winner::Draw, Winner::P1, Winner::P2};
+struct Game {
+    p1: Item,
+    p2: Item,
+}
 
-fn item_score(p: Item) -> u32 {
-    match p {
-        Rock => 1,
-        Paper => 2,
-        Scissors => 3,
+impl Game {
+    fn winner(&self) -> Winner {
+        match (&self.p1, &self.p2) {
+            (Rock, Rock) => Draw,
+            (Rock, Paper) => P2,
+            (Rock, Scissors) => P1,
+            (Paper, Rock) => P1,
+            (Paper, Paper) => Draw,
+            (Paper, Scissors) => P2,
+            (Scissors, Rock) => P2,
+            (Scissors, Paper) => P1,
+            (Scissors, Scissors) => Draw,
+        }
+    }
+}
+use {Item::*, Winner::*};
+
+trait Score {
+    fn score(&self) -> u32;
+}
+
+impl Score for Item {
+    fn score(&self) -> u32 {
+        match self {
+            Rock => 1,
+            Paper => 2,
+            Scissors => 3,
+        }
     }
 }
 
-fn char_to_item(c: char) -> Item {
-    match c {
-        'A' | 'X' => Rock,
-        'B' | 'Y' => Paper,
-        'C' | 'Z' => Scissors,
-        _ => panic!(),
+impl Score for Winner {
+    fn score(&self) -> u32 {
+        match self {
+            P2 => 6,
+            Draw => 3,
+            P1 => 0,
+        }
     }
 }
 
-fn char_to_result(c: char) -> Winner {
-    match c {
-        'X' => P1,
-        'Y' => Draw,
-        'Z' => P2,
-        _ => panic!(),
+trait CharExt {
+    fn to_item(&self) -> Item;
+    fn to_result(&self) -> Winner;
+}
+
+impl CharExt for char {
+    fn to_item(&self) -> Item {
+        match self {
+            'A' | 'X' => Rock,
+            'B' | 'Y' => Paper,
+            'C' | 'Z' => Scissors,
+            _ => panic!(),
+        }
+    }
+
+    fn to_result(&self) -> Winner {
+        match self {
+            'X' => P1,
+            'Y' => Draw,
+            'Z' => P2,
+            _ => panic!(),
+        }
     }
 }
 
@@ -54,41 +97,23 @@ fn item_for_desired_result(p1: &Item, winner: &Winner) -> Item {
     }
 }
 
-fn winner(p1: &Item, p2: &Item) -> Winner {
-    match (p1, p2) {
-        (Rock, Rock) => Draw,
-        (Rock, Paper) => P2,
-        (Rock, Scissors) => P1,
-        (Paper, Rock) => P1,
-        (Paper, Paper) => Draw,
-        (Paper, Scissors) => P2,
-        (Scissors, Rock) => P2,
-        (Scissors, Paper) => P1,
-        (Scissors, Scissors) => Draw,
-    }
-}
-
-fn winner_score(winner: Winner) -> u32 {
-    match winner {
-        P2 => 6,
-        Draw => 3,
-        P1 => 0,
-    }
-}
-
 fn part1_line_score(line: &str) -> u32 {
-    let p1 = char_to_item(line.chars().nth(0).unwrap());
-    let p2 = char_to_item(line.chars().nth(2).unwrap());
+    let p1 = line.chars().nth(0).unwrap().to_item();
+    let p2 = line.chars().nth(2).unwrap().to_item();
+    let game = Game {
+        p1: p1,
+        p2: p2.clone(),
+    };
 
-    winner_score(winner(&p1, &p2)) + item_score(p2)
+    game.winner().score() + p2.score()
 }
 
 fn part2_line_score(line: &str) -> u32 {
-    let p1 = char_to_item(line.chars().nth(0).unwrap());
-    let winner = char_to_result(line.chars().nth(2).unwrap());
+    let p1 = line.chars().nth(0).unwrap().to_item();
+    let winner = line.chars().nth(2).unwrap().to_result();
     let p2 = item_for_desired_result(&p1, &winner);
 
-    winner_score(winner) + item_score(p2)
+    winner.score() + p2.score()
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
